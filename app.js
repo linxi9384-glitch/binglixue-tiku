@@ -48,6 +48,7 @@ const OPTION_HOVER_RESTORE_EVENTS = ["pointermove", "pointerdown", "mousemove", 
 const DEEPSEEK_API_BASE = "https://api.deepseek.com/v1";
 const DEEPSEEK_MODEL = "deepseek-chat";
 const AI_STORAGE_KEY = "pathology_deepseek_key";
+const WRONG_BOOK_KEY = "pathology_wrong_book";
 let aiResponses = {};
 let deepseekApiKey = "";
 
@@ -375,6 +376,7 @@ function submitExam() {
   resultState = { paperIndex: currentPaper, objectiveScore, results };
   localStorage.removeItem(storageKey(currentPaper));
   renderResults(singleScore, multiCorrect, objectiveScore, results);
+  saveWrongQuestions();
   autoGradeAllSubjective();
 }
 
@@ -466,7 +468,76 @@ function backToLanding() {
   byId("sidebar").style.display = "none";
   byId("results").style.display = "none";
   byId("landing").style.display = "flex";
-  checkResume();
+  
+function saveWrongQuestions() {
+  if (!resultState) return;
+  const paper = PAPERS[resultState.paperIndex];
+  let book = [];
+  try { book = JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || "[]"); } catch(e) {}
+  resultState.results.forEach((r) => {
+    const q = paper[r.index];
+    if (["single", "multi"].includes(r.type) && !r.correct) {
+      const key = PAPER_NAMES[resultState.paperIndex] + "-" + r.index;
+      if (!book.find(e => e.key === key)) {
+        book.push({
+          key: key,
+          paper: PAPER_NAMES[resultState.paperIndex],
+          paperIndex: resultState.paperIndex,
+          index: r.index,
+          type: r.type,
+          question: q.q,
+          options: q.options || [],
+          userAnswer: r.userDisplay,
+          correctAnswer: r.correctDisplay,
+          time: new Date().toISOString().slice(0, 10)
+        });
+      }
+    }
+  });
+  localStorage.setItem(WRONG_BOOK_KEY, JSON.stringify(book));
+}
+
+function showWrongBook() {
+  let book = [];
+  try { book = JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || "[]"); } catch(e) {}
+  if (book.length === 0) {
+    alert("暂无错题记录");
+    return;
+  }
+  let html = '<div id="wrongBookOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);z-index:200;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()">';
+  html += '<div style="background:#fff;border-radius:18px;padding:24px;max-width:720px;width:90%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:1.2rem">错题册 (' + book.length + '题)</h2>';
+  html += '<div><button class="btn" style="font-size:.82rem;padding:6px 12px;margin-right:8px" onclick="clearWrongBook()">清空</button>';
+  html += '<button class="btn" style="font-size:.82rem;padding:6px 12px" onclick="document.getElementById(\"wrongBookOverlay\").remove()">关闭</button></div></div>';
+  
+  // Group by paper
+  const groups = {};
+  book.forEach(e => { if (!groups[e.paper]) groups[e.paper] = []; groups[e.paper].push(e); });
+  
+  for (const [paperName, items] of Object.entries(groups)) {
+    html += '<h3 style="color:var(--primary);margin:14px 0 8px;font-size:1rem">' + escapeHtml(paperName) + '</h3>';
+    items.forEach(e => {
+      html += '<div style="background:#fef2f2;border-left:4px solid var(--danger);border-radius:10px;padding:12px 14px;margin-bottom:10px">';
+      html += '<strong>第 ' + (e.index + 1) + ' 题 (' + (e.type === "single" ? "单选" : "多选") + ')</strong>';
+      html += '<p style="margin:6px 0;font-size:.92rem">' + escapeHtml(e.question) + '</p>';
+      html += '<p style="color:var(--danger);font-size:.85rem;margin:3px 0"><b>你的答案：</b>' + escapeHtml(e.userAnswer) + '</p>';
+      html += '<p style="color:var(--ok);font-size:.85rem;margin:3px 0"><b>正确答案：</b>' + escapeHtml(e.correctAnswer) + '</p>';
+      html += '</div>';
+    });
+  }
+  html += '</div></div>';
+  document.body.insertAdjacentHTML("beforeend", html);
+}
+
+function clearWrongBook() {
+  if (confirm("确定要清空所有错题记录吗？")) {
+    localStorage.removeItem(WRONG_BOOK_KEY);
+    document.getElementById("wrongBookOverlay").remove();
+    alert("错题册已清空");
+  }
+}
+
+checkResume();
 }
 
 function getApiKey() {
@@ -519,6 +590,12 @@ async function aiExplainWrong(index) {
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 解析</strong><p>' + br(content) + '</p></div>';
     aiResponses[index] = content;
+    const scoreMatch = content.match(/\u3010\u5f97\u5206[\uff1a:]\s*(\d+)\u3011/);
+    if (scoreMatch) {
+      const score = parseInt(scoreMatch[1]);
+      selfAssess(index, Math.min(score, maxScore), null);
+      updateTotalScoreDisplay();
+    }
   } catch (e) {
     box.innerHTML = '<div class="ai-response ai-error"><strong>✗ 解析失败</strong><p>' + escapeHtml(e.message) + '</p></div>';
   }
@@ -533,7 +610,7 @@ async function aiGradeSubjective(index) {
   if (!box) return;
   box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 批改...</span>';
   try {
-    const systemPrompt = "你是一位病理学教授。请根据参考答案，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。";
+    const systemPrompt = "你是一位病理学教授。请根据参考答案，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。最后一行用【得分：X】格式输出分数。";
     const userPrompt = "题目：" + question.q + "\n参考答案：" + (result.reference || "无") + "\n学生作答：" + (result.userDisplay || "（未作答）");
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 批改</strong><p>' + br(content) + '</p></div>';
