@@ -275,6 +275,9 @@ function selectSingle(optionIndex) {
   renderQuestion();
   renderSidebar();
   saveProgress();
+    if (currentQ < PAPERS[currentPaper].length - 1) {
+    window.setTimeout(() => nextQ(), 280);
+  }
 }
 
 function selectMulti(optionIndex) {
