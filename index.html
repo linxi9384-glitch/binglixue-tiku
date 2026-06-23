@@ -17,6 +17,8 @@ button,input,textarea{font-family:inherit}
 .results{max-width:920px;margin:0 auto;padding:20px 16px;display:none}.score-card{background:linear-gradient(135deg,#2f5bea,#5b21b6);color:#fff;border-radius:20px;text-align:center;padding:30px 24px;margin-bottom:18px}.big-score{font-size:3.3rem;font-weight:900}.answer-review{background:#fff;border-radius:16px;padding:18px 20px;margin-bottom:12px;box-shadow:0 2px 12px rgba(15,23,42,.05)}.answer-review.correct{border-left:5px solid var(--ok)}.answer-review.incorrect{border-left:5px solid var(--danger)}.answer-review.subj{border-left:5px solid var(--warn)}.ref-answer{background:#f8fafc;border-radius:12px;padding:14px 16px;margin:10px 0;font-size:.92rem;line-height:1.72;white-space:pre-wrap}.self-assess{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.self-assess button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 13px;cursor:pointer}.self-assess button.picked{background:var(--primary);border-color:var(--primary);color:#fff}.footer{text-align:center;color:#94a3b8;font-size:.8rem;padding:20px}
 @media(min-width:1040px){body.exam-open .exam-area{margin-right:304px}.sidebar{display:block}}
 @media(max-width:768px){.topbar{padding:10px 12px}.topbar h1{font-size:.98rem}.timer{font-size:.96rem;padding:6px 11px}.hero{padding:22px 16px}.hero h2{font-size:1.16rem}.hero p{font-size:.92rem}.paper-cards{grid-template-columns:1fr}.exam-header{align-items:stretch}.nav-buttons{width:100%;display:grid;grid-template-columns:repeat(2,1fr)}.btn{padding:11px 12px}.question-card{padding:16px}.question-text{font-size:1rem}.text-answer{min-height:220px}.sidebar{position:static;width:auto;display:block!important;border-left:0;box-shadow:none;margin:12px 0;border-radius:16px}.q-grid{grid-template-columns:repeat(10,1fr)}}
+
+.api-key-section{background:var(--card);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.05)}.api-key-section input{flex:1;min-width:200px;border:2px solid var(--line);border-radius:10px;padding:10px 14px;font-size:.92rem}.api-key-section input:focus{outline:none;border-color:var(--primary)}.ai-grade-btn,.ai-explain-btn{border-color:#7c3aed;color:#7c3aed;font-size:.85rem;padding:6px 12px;margin-top:6px}.ai-grade-btn:hover,.ai-explain-btn:hover{border-color:#5b21b6;color:#5b21b6;background:#f5f3ff}.ai-response{background:#f5f3ff;border-radius:12px;padding:14px 16px;margin-top:10px;font-size:.9rem;line-height:1.72;white-space:pre-wrap}.ai-response.ai-error{background:#fef2f2;color:#dc2626}.ai-grade-box,.ai-explain-box{margin-top:8px}
 </style>
 </head>
 <body>
@@ -39,7 +41,7 @@ button,input,textarea{font-family:inherit}
       </div>
     </section>
 
-    <h2 class="section-title">选择试卷</h2>
+    `n    <section class="api-key-section" id="apiKeySection">`n      <input type="password" id="apiKeyInput" placeholder="输入 DeepSeek API Key（可选，用于 AI 批改和解析）" oninput="saveApiKey(this.value)">`n      <span id="apiKeyStatus" style="font-size:.82rem;color:var(--muted)"></span>`n    </section>`n<h2 class="section-title">选择试卷</h2>
     <section class="paper-cards">
       <article class="paper-card" onclick="startExam(0)">
         <div class="paper-num">卷一</div>
