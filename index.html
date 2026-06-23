@@ -41,7 +41,12 @@ button,input,textarea{font-family:inherit}
       </div>
     </section>
 
-    `n    <section class="api-key-section" id="apiKeySection">`n      <input type="password" id="apiKeyInput" placeholder="输入 DeepSeek API Key（可选，用于 AI 批改和解析）" oninput="saveApiKey(this.value)">`n      <span id="apiKeyStatus" style="font-size:.82rem;color:var(--muted)"></span>`n    </section>`n<h2 class="section-title">选择试卷</h2>
+    
+    <section class="api-key-section" id="apiKeySection">
+      <input type="password" id="apiKeyInput" placeholder="输入 DeepSeek API Key（可选，用于 AI 批改和解析）" oninput="saveApiKey(this.value)">
+      <span id="apiKeyStatus" style="font-size:.82rem;color:var(--muted)"></span>
+    </section>
+<h2 class="section-title">选择试卷</h2>
     <section class="paper-cards">
       <article class="paper-card" onclick="startExam(0)">
         <div class="paper-num">卷一</div>
@@ -82,3 +87,4 @@ button,input,textarea{font-family:inherit}
   <script src="./app.js?v=20260623"></script>
 </body>
 </html>
+
