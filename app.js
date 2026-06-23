@@ -1,4 +1,4 @@
-const PAPER_NAMES = ["卷一", "卷二", "卷三"];
+﻿const PAPER_NAMES = ["卷一", "卷二", "卷三"];
 const EXAM_DURATION_SECONDS = 90 * 60;
 
 const SUBJECTIVE_ANSWERS = {
@@ -434,9 +434,26 @@ function renderResults(singleScore, multiCorrect, objectiveScore, results) {
 }
 
 function selfAssess(questionIndex, score, button) {
-  button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("picked"));
-  button.classList.add("picked");
+  if (button) {
+    button.parentElement.querySelectorAll("button").forEach((item) => item.classList.remove("picked"));
+    button.classList.add("picked");
+  }
   selfScores[questionIndex] = score;
+  updateTotalScoreDisplay();
+}
+
+function updateTotalScoreDisplay() {
+  if (!resultState) return;
+  let subjectiveScore = 0;
+  const paper = PAPERS[resultState.paperIndex];
+  paper.forEach((question, index) => {
+    if (["term", "short", "essay"].includes(question.type) && selfScores[index] !== undefined) {
+      subjectiveScore += selfScores[index];
+    }
+  });
+  const total = resultState.objectiveScore + subjectiveScore;
+  const el = document.getElementById("totalScore");
+  if (el) el.textContent = String(total);
 }
 
 function calcTotalScore() {
@@ -468,7 +485,8 @@ function backToLanding() {
   byId("sidebar").style.display = "none";
   byId("results").style.display = "none";
   byId("landing").style.display = "flex";
-  
+}
+
 function saveWrongQuestions() {
   if (!resultState) return;
   const paper = PAPERS[resultState.paperIndex];
@@ -538,7 +556,6 @@ function clearWrongBook() {
 }
 
 checkResume();
-}
 
 function getApiKey() {
   if (deepseekApiKey) return deepseekApiKey;
@@ -615,6 +632,12 @@ async function aiGradeSubjective(index) {
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 批改</strong><p>' + br(content) + '</p></div>';
     aiResponses[index] = content;
+    const scoreMatch = content.match(/【得分[：:]\s*(\d+)】/);
+    if (scoreMatch) {
+      const score = parseInt(scoreMatch[1]);
+      selfScores[index] = Math.min(score, maxScore);
+      updateTotalScoreDisplay();
+    }
   } catch (e) {
     box.innerHTML = '<div class="ai-response ai-error"><strong>✗ 批改失败</strong><p>' + escapeHtml(e.message) + '</p></div>';
   }
@@ -638,8 +661,6 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") prevQ();
   if (event.key === "ArrowRight") nextQ();
 });
-
-autoGradeAllSubjective();
 
 checkResume();
 loadApiKeyStatus();
