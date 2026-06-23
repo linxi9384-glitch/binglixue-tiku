@@ -43,9 +43,22 @@ let timerInterval = null;
 let examActive = false;
 let selfScores = {};
 let resultState = null;
+const OPTION_HOVER_SUPPRESS_CLASS = "suppress-option-hover";
+const OPTION_HOVER_RESTORE_EVENTS = ["pointermove", "pointerdown", "mousemove", "mousedown", "touchstart", "keydown"];
 
 function byId(id) {
   return document.getElementById(id);
+}
+
+function clearOptionHoverSuppression() {
+  document.body.classList.remove(OPTION_HOVER_SUPPRESS_CLASS);
+  OPTION_HOVER_RESTORE_EVENTS.forEach((eventName) => window.removeEventListener(eventName, clearOptionHoverSuppression));
+}
+
+function suppressOptionHoverUntilInput() {
+  clearOptionHoverSuppression();
+  document.body.classList.add(OPTION_HOVER_SUPPRESS_CLASS);
+  OPTION_HOVER_RESTORE_EVENTS.forEach((eventName) => window.addEventListener(eventName, clearOptionHoverSuppression, { once: true }));
 }
 
 function escapeHtml(value) {
@@ -275,8 +288,11 @@ function selectSingle(optionIndex) {
   renderQuestion();
   renderSidebar();
   saveProgress();
-    if (currentQ < PAPERS[currentPaper].length - 1) {
-    window.setTimeout(() => nextQ(), 280);
+  if (currentQ < PAPERS[currentPaper].length - 1) {
+    window.setTimeout(() => {
+      nextQ();
+      suppressOptionHoverUntilInput();
+    }, 280);
   }
 }
 
