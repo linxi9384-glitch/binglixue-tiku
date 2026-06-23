@@ -1,4 +1,4 @@
-﻿const PAPER_NAMES = ["卷一", "卷二", "卷三"];
+const PAPER_NAMES = ["卷一", "卷二", "卷三"];
 const EXAM_DURATION_SECONDS = 90 * 60;
 
 const SUBJECTIVE_ANSWERS = {
@@ -385,6 +385,24 @@ function renderResults(singleScore, multiCorrect, objectiveScore, results) {
   let html = `<section class="score-card"><div class="big-score" id="totalScore">${objectiveScore}</div><p>客观题得分：单选 ${singleScore}/50，多选 ${multiCorrect * 2}/20，满分 70</p></section>`;
   html += '<section class="answer-review subj"><strong>主观题自评</strong><p style="color:#64748b;margin-top:6px">请对照参考答案自评，评完点击底部“计算总分”。</p></section>';
 
+  const wrongResults = results.filter((result) => ["single", "multi"].includes(result.type) && !result.correct);
+  if (wrongResults.length > 0) {
+    html += '<section class="answer-review incorrect" id="wrong-summary"><strong>错题汇总</strong>';
+    html += `<p style="color:#64748b;font-size:.9rem;margin:6px 0 12px">本次客观题共错 ${wrongResults.length} 题，已保存到首页错题册。</p>`;
+    wrongResults.forEach((result) => {
+      const question = paper[result.index];
+      html += '<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px">';
+      html += '<strong>第 ' + (result.index + 1) + ' 题（' + (result.type === "single" ? "单选" : "多选") + '）</strong>';
+      html += '<p style="font-size:.9rem;margin:6px 0">' + escapeHtml(question.q) + '</p>';
+      html += '<p style="color:var(--danger);font-size:.85rem;margin:3px 0"><b>你的答案：</b>' + escapeHtml(result.userDisplay) + '</p>';
+      html += '<p style="color:var(--ok);font-size:.85rem;margin:3px 0"><b>正确答案：</b>' + escapeHtml(result.correctDisplay) + '</p>';
+      html += '</div>';
+    });
+    html += '</section>';
+  } else {
+    html += '<section class="answer-review correct" id="wrong-summary"><strong>错题汇总</strong><p style="color:#16a34a;font-size:.9rem;margin-top:6px">本次客观题全部正确。</p></section>';
+  }
+
   results.forEach((result) => {
     const question = paper[result.index];
     const questionNumber = result.index + 1;
@@ -444,28 +462,25 @@ function selfAssess(questionIndex, score, button) {
 
 function updateTotalScoreDisplay() {
   if (!resultState) return;
-  let subjectiveScore = 0;
-  const paper = PAPERS[resultState.paperIndex];
-  paper.forEach((question, index) => {
-    if (["term", "short", "essay"].includes(question.type) && selfScores[index] !== undefined) {
-      subjectiveScore += selfScores[index];
-    }
-  });
-  const total = resultState.objectiveScore + subjectiveScore;
+  const total = resultState.objectiveScore + currentSubjectiveScore();
   const el = document.getElementById("totalScore");
   if (el) el.textContent = String(total);
 }
 
+function currentSubjectiveScore() {
+  if (!resultState) return 0;
+  const paper = PAPERS[resultState.paperIndex];
+  return paper.reduce((total, question, index) => {
+    if (["term", "short", "essay"].includes(question.type) && selfScores[index] !== undefined) {
+      return total + selfScores[index];
+    }
+    return total;
+  }, 0);
+}
+
 function calcTotalScore() {
   if (!resultState) return;
-  let subjectiveScore = 0;
-  const paper = PAPERS[resultState.paperIndex];
-  paper.forEach((question, index) => {
-    if (["term", "short", "essay"].includes(question.type) && selfScores[index] !== undefined) {
-      subjectiveScore += selfScores[index];
-    }
-  });
-  const total = resultState.objectiveScore + subjectiveScore;
+  const total = resultState.objectiveScore + currentSubjectiveScore();
   const grade = total >= 90 ? "优秀" : total >= 80 ? "良好" : total >= 70 ? "中等" : total >= 60 ? "及格" : "需努力";
   byId("finalScoreBox").style.display = "block";
   byId("finalScore").textContent = `${total} / 100`;
@@ -527,11 +542,11 @@ function showWrongBook() {
   html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:1.2rem">错题册 (' + book.length + '题)</h2>';
   html += '<div><button class="btn" style="font-size:.82rem;padding:6px 12px;margin-right:8px" onclick="clearWrongBook()">清空</button>';
   html += '<button class="btn" style="font-size:.82rem;padding:6px 12px" onclick="document.getElementById(\"wrongBookOverlay\").remove()">关闭</button></div></div>';
-  
+
   // Group by paper
   const groups = {};
   book.forEach(e => { if (!groups[e.paper]) groups[e.paper] = []; groups[e.paper].push(e); });
-  
+
   for (const [paperName, items] of Object.entries(groups)) {
     html += '<h3 style="color:var(--primary);margin:14px 0 8px;font-size:1rem">' + escapeHtml(paperName) + '</h3>';
     items.forEach(e => {
@@ -550,12 +565,11 @@ function showWrongBook() {
 function clearWrongBook() {
   if (confirm("确定要清空所有错题记录吗？")) {
     localStorage.removeItem(WRONG_BOOK_KEY);
-    document.getElementById("wrongBookOverlay").remove();
+    const overlay = document.getElementById("wrongBookOverlay");
+    if (overlay) overlay.remove();
     alert("错题册已清空");
   }
 }
-
-checkResume();
 
 function getApiKey() {
   if (deepseekApiKey) return deepseekApiKey;
@@ -607,12 +621,6 @@ async function aiExplainWrong(index) {
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 解析</strong><p>' + br(content) + '</p></div>';
     aiResponses[index] = content;
-    const scoreMatch = content.match(/\u3010\u5f97\u5206[\uff1a:]\s*(\d+)\u3011/);
-    if (scoreMatch) {
-      const score = parseInt(scoreMatch[1]);
-      selfAssess(index, Math.min(score, maxScore), null);
-      updateTotalScoreDisplay();
-    }
   } catch (e) {
     box.innerHTML = '<div class="ai-response ai-error"><strong>✗ 解析失败</strong><p>' + escapeHtml(e.message) + '</p></div>';
   }
@@ -672,4 +680,3 @@ function loadApiKeyStatus() {
   var statusEl = byId("apiKeyStatus");
   if (statusEl) statusEl.textContent = key ? "✓ API Key 已载入" : "";
 }
-
