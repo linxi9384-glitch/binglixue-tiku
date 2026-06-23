@@ -1,6 +1,12 @@
-*.json
-*.js
-*.md
-app_logic.js
+*.py
+*.pyc
 papers.js
-*.txt
+papers_filled.js
+app_logic.js
+all_questions.json
+questions_with_answers.json
+p1.json
+p1_data.json
+p2.json
+p3.json
+test_node.txt
