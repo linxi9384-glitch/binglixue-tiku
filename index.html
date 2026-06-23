@@ -46,7 +46,8 @@ button,input,textarea{font-family:inherit}
       <input type="password" id="apiKeyInput" placeholder="输入 DeepSeek API Key（可选，用于 AI 批改和解析）" oninput="saveApiKey(this.value)">
       <span id="apiKeyStatus" style="font-size:.82rem;color:var(--muted)"></span>
     </section>
-<h2 class="section-title">选择试卷</h2>
+<div style="text-align:center;margin-top:4px"><button class="btn" type="button" onclick="showWrongBook()" style="border-color:#7c3aed;color:#7c3aed">错题册</button></div>
+    <h2 class="section-title">选择试卷</h2>
     <section class="paper-cards">
       <article class="paper-card" onclick="startExam(0)">
         <div class="paper-num">卷一</div>
