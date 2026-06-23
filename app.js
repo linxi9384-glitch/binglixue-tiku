@@ -414,7 +414,7 @@ function renderResults(singleScore, multiCorrect, objectiveScore, results) {
       if (!result.correct) {
         html += '<p style="color:#16a34a;font-size:.9rem"><b>正确答案：</b>' + escapeHtml(result.correctDisplay) + '</p>';
         html += '<button class="btn ai-explain-btn" type="button" onclick="aiExplainWrong(' + result.index + ')">AI 解析</button>';
-        html += '<div class="ai-explain-box" id="ai-explain-" + result.index + "></div>';
+        html += '<div class="ai-explain-box" id="ai-explain-' + result.index + '"></div>';
       }
       html += "</section>";
     }
@@ -543,6 +543,19 @@ async function aiGradeSubjective(index) {
   }
 }
 
+
+async function autoGradeAllSubjective() {
+  if (!resultState || !getApiKey()) return;
+  const paper = PAPERS[resultState.paperIndex];
+  for (let i = 0; i < paper.length; i++) {
+    const q = paper[i];
+    if (["term", "short", "essay"].includes(q.type)) {
+      await aiGradeSubjective(i);
+      await new Promise(r => setTimeout(r, 800));
+    }
+  }
+}
+
 window.addEventListener("keydown", (event) => {
   if (!examActive) return;
   if (event.key === "ArrowLeft") prevQ();
@@ -561,3 +574,4 @@ function loadApiKeyStatus() {
   var statusEl = byId("apiKeyStatus");
   if (statusEl) statusEl.textContent = key ? "✓ API Key 已载入" : "";
 }
+
