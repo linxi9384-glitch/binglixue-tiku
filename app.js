@@ -45,6 +45,11 @@ let selfScores = {};
 let resultState = null;
 const OPTION_HOVER_SUPPRESS_CLASS = "suppress-option-hover";
 const OPTION_HOVER_RESTORE_EVENTS = ["pointermove", "pointerdown", "mousemove", "mousedown", "touchstart", "keydown"];
+const DEEPSEEK_API_BASE = "https://api.deepseek.com/v1";
+const DEEPSEEK_MODEL = "deepseek-chat";
+const AI_STORAGE_KEY = "pathology_deepseek_key";
+let aiResponses = {};
+let deepseekApiKey = "";
 
 function byId(id) {
   return document.getElementById(id);
@@ -370,6 +375,7 @@ function submitExam() {
   resultState = { paperIndex: currentPaper, objectiveScore, results };
   localStorage.removeItem(storageKey(currentPaper));
   renderResults(singleScore, multiCorrect, objectiveScore, results);
+  autoGradeAllSubjective();
 }
 
 function renderResults(singleScore, multiCorrect, objectiveScore, results) {
@@ -398,13 +404,18 @@ function renderResults(singleScore, multiCorrect, objectiveScore, results) {
         html += `<button type="button" onclick="selfAssess(${result.index},${Math.round(maxScore / 2)},this)">部分正确</button>`;
         html += `<button type="button" onclick="selfAssess(${result.index},0,this)">基本不会</button>`;
       }
-      html += "</div></section>";
+      html += '<button class="btn ai-grade-btn" type="button" onclick="aiGradeSubjective(' + result.index + ')">AI 批改</button>';
+      html += '</div><div class="ai-grade-box" id="ai-grade-' + result.index + '"></div></section>';
     } else {
       html += `<section class="answer-review ${result.correct ? "correct" : "incorrect"}">`;
       html += `<strong>第 ${questionNumber} 题 ${result.correct ? "✓ 正确" : "✗ 错误"}</strong>`;
       html += `<div class="question-text">${br(question.q)}</div>`;
       html += `<p style="color:${result.correct ? "#16a34a" : "#dc2626"};font-size:.9rem"><b>你的答案：</b>${escapeHtml(result.userDisplay)}</p>`;
-      if (!result.correct) html += `<p style="color:#16a34a;font-size:.9rem"><b>正确答案：</b>${escapeHtml(result.correctDisplay)}</p>`;
+      if (!result.correct) {
+        html += '<p style="color:#16a34a;font-size:.9rem"><b>正确答案：</b>' + escapeHtml(result.correctDisplay) + '</p>';
+        html += '<button class="btn ai-explain-btn" type="button" onclick="aiExplainWrong(' + result.index + ')">AI 解析</button>';
+        html += '<div class="ai-explain-box" id="ai-explain-" + result.index + "></div>';
+      }
       html += "</section>";
     }
   });
@@ -458,10 +469,95 @@ function backToLanding() {
   checkResume();
 }
 
+function getApiKey() {
+  if (deepseekApiKey) return deepseekApiKey;
+  deepseekApiKey = (localStorage.getItem(AI_STORAGE_KEY) || "").trim();
+  return deepseekApiKey;
+}
+
+function saveApiKey(key) {
+  deepseekApiKey = key.trim();
+  localStorage.setItem(AI_STORAGE_KEY, deepseekApiKey);
+  var statusEl = byId("apiKeyStatus");
+  if (statusEl) statusEl.textContent = deepseekApiKey ? "✓ API Key 已保存" : "";
+}
+
+async function callDeepSeek(systemPrompt, userPrompt) {
+  const key = getApiKey();
+  if (!key) throw new Error("API Key 未设置");
+  const resp = await fetch(DEEPSEEK_API_BASE + "/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 2048
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || "API 请求失败: " + resp.status);
+  }
+  const data = await resp.json();
+  return data.choices[0].message.content;
+}
+
+async function aiExplainWrong(index) {
+  if (!resultState) return;
+  const result = resultState.results[index];
+  const question = PAPERS[resultState.paperIndex][index];
+  const box = byId("ai-explain-" + index);
+  if (!box) return;
+  box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 解析...</span>';
+  try {
+    const systemPrompt = "你是一位病理学教授。请用中文简要解释这道病理学题目的正确答案，说明为什么这个答案是正确的，并指出常见错误选项的误区。请直接给出解析，不要问候。";
+    const userPrompt = "题目：" + question.q + "\n选项：" + question.options.join("\n") + "\n正确答案：" + result.correctDisplay + "\n我的答案：" + result.userDisplay;
+    const content = await callDeepSeek(systemPrompt, userPrompt);
+    box.innerHTML = '<div class="ai-response"><strong>✓ AI 解析</strong><p>' + br(content) + '</p></div>';
+    aiResponses[index] = content;
+  } catch (e) {
+    box.innerHTML = '<div class="ai-response ai-error"><strong>✗ 解析失败</strong><p>' + escapeHtml(e.message) + '</p></div>';
+  }
+}
+
+async function aiGradeSubjective(index) {
+  if (!resultState) return;
+  const result = resultState.results[index];
+  const question = PAPERS[resultState.paperIndex][index];
+  const maxScore = subjectiveMaxScore(result.type);
+  const box = byId("ai-grade-" + index);
+  if (!box) return;
+  box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 批改...</span>';
+  try {
+    const systemPrompt = "你是一位病理学教授。请根据参考答案，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。";
+    const userPrompt = "题目：" + question.q + "\n参考答案：" + (result.reference || "无") + "\n学生作答：" + (result.userDisplay || "（未作答）");
+    const content = await callDeepSeek(systemPrompt, userPrompt);
+    box.innerHTML = '<div class="ai-response"><strong>✓ AI 批改</strong><p>' + br(content) + '</p></div>';
+    aiResponses[index] = content;
+  } catch (e) {
+    box.innerHTML = '<div class="ai-response ai-error"><strong>✗ 批改失败</strong><p>' + escapeHtml(e.message) + '</p></div>';
+  }
+}
+
 window.addEventListener("keydown", (event) => {
   if (!examActive) return;
   if (event.key === "ArrowLeft") prevQ();
   if (event.key === "ArrowRight") nextQ();
 });
 
+autoGradeAllSubjective();
+
 checkResume();
+loadApiKeyStatus();
+
+function loadApiKeyStatus() {
+  var key = getApiKey();
+  var input = byId("apiKeyInput");
+  if (input) input.value = key;
+  var statusEl = byId("apiKeyStatus");
+  if (statusEl) statusEl.textContent = key ? "✓ API Key 已载入" : "";
+}
