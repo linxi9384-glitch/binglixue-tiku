@@ -1,6 +1,5 @@
 *.py
 *.pyc
-papers.js
 papers_filled.js
 app_logic.js
 all_questions.json
