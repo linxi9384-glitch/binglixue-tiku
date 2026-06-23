@@ -1,0 +1,6 @@
+*.json
+*.js
+*.md
+app_logic.js
+papers.js
+*.txt
