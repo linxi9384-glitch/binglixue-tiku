@@ -1,4 +1,4 @@
-﻿const PAPER_NAMES = ["卷一", "卷二", "卷三"];
+﻿const PAPER_NAMES = ["卷一", "卷二", "卷三", "随机卷"];
 const EXAM_DURATION_SECONDS = 90 * 60;
 
 const SUBJECTIVE_ANSWERS = {
@@ -94,7 +94,8 @@ function initAnswers(paper) {
 }
 
 function checkResume() {
-  for (let paperIndex = 0; paperIndex < PAPERS.length; paperIndex += 1) {
+  for (let paperIndex = 0; paperIndex < 4; paperIndex += 1) {
+    if (paperIndex === 3 && !PAPERS[3]) continue;
     const raw = localStorage.getItem(storageKey(paperIndex));
     if (!raw) continue;
     try {
@@ -124,11 +125,21 @@ function dismissResume() {
 
 function startExam(paperIndex) {
   localStorage.removeItem(storageKey(paperIndex));
+  if (paperIndex === 3) {
+    var newPaper = buildRandomPaper();
+    localStorage.setItem("pathology_random_paper", JSON.stringify(newPaper));
+    PAPERS[3] = newPaper;
+  }
   loadExam(paperIndex, false);
 }
 
 function loadExam(paperIndex, resume) {
   currentPaper = paperIndex;
+  if (paperIndex === 3 && !PAPERS[3]) {
+    alert("随机卷尚未生成，请重新点击随机卷卡片。");
+    backToLanding();
+    return;
+  }
   const saved = resume ? JSON.parse(localStorage.getItem(storageKey(paperIndex)) || "null") : null;
 
   if (saved && saved.answers) {
@@ -368,7 +379,13 @@ function submitExam() {
       result.correctDisplay = formatOptions(question, question.answer);
     } else {
       result.userDisplay = answer.val || "（未作答）";
-      result.reference = SUBJECTIVE_ANSWERS[`${currentPaper}-${index}`] || "暂无参考答案";
+      var subjKey;
+      if (currentPaper === 3 && question.sourcePaper !== undefined) {
+        subjKey = question.sourcePaper + "-" + question.sourceIndex;
+      } else {
+        subjKey = currentPaper + "-" + index;
+      }
+      result.reference = SUBJECTIVE_ANSWERS[subjKey] || "暂无参考答案";
     }
     return result;
   });
@@ -495,6 +512,10 @@ function goHome() {
   if (examActive) {
     saveProgress();
     if (!confirm("确定返回主页吗？当前进度已保存，下次可继续。")) return;
+  }
+  if (currentPaper === 3) {
+    localStorage.removeItem("pathology_random_paper");
+    PAPERS[3] = null;
   }
   backToLanding();
 }
