@@ -1,4 +1,4 @@
-const PAPER_NAMES = ["卷一", "卷二", "卷三"];
+﻿const PAPER_NAMES = ["卷一", "卷二", "卷三", "随机卷"];
 const EXAM_DURATION_SECONDS = 90 * 60;
 
 const SUBJECTIVE_ANSWERS = {
@@ -10,13 +10,13 @@ const SUBJECTIVE_ANSWERS = {
   "0-65": "血栓形成的条件即 Virchow 三联征：①心血管内皮损伤：最重要、最常见，可暴露内皮下胶原并激活血小板和凝血系统；②血流状态改变：如血流减慢或涡流形成，促使血小板易于黏附并减少凝血因子稀释；③血液凝固性增高：包括遗传性和获得性高凝状态。三者常协同作用。",
   "0-66": "良性与恶性肿瘤的区别主要包括：①分化程度：良性高，恶性低；②异型性：良性小，恶性大；③核分裂象：良性少，恶性多且可见病理性核分裂；④生长方式：良性多膨胀性，恶性多浸润性；⑤生长速度：良性慢，恶性快；⑥转移：良性无，恶性有；⑦复发：良性少，恶性多；⑧对机体影响：良性多为局部压迫，恶性可致恶病质。",
   "0-67": "大叶性肺炎的典型病理变化分四期：①充血水肿期：肺泡壁毛细血管扩张充血，肺泡腔内浆液渗出；②红色肝样变期：肺泡内大量红细胞、纤维素及少量中性粒细胞，使肺组织暗红实变；③灰色肝样变期：红细胞减少，大量中性粒细胞和纤维素使肺呈灰白色实变；④溶解消散期：渗出物被酶解、吸收或咳出，肺组织逐渐恢复。",
-  "0-68": "肝硬化的临床病理联系主要表现为：①门静脉高压症：脾大及脾功能亢进、腹水、侧支循环形成（尤以食管胃底静脉曲张最危险）；②肝功能不全：低蛋白血症、黄疸、出血倾向、激素灭活障碍（肝掌、蜘蛛痣）以及肝性脑病等。",
+  "0-68": "肝硬化的临床病理联系主要表现为：①门静脉高压症：脾大及脾功能亢进、腹水、侧支循环形成（尤以食管胃底静脉曲张最危险）；②肝功能不全：低蛋白血���、黄疸、出血倾向、激素灭活障碍（肝掌、蜘蛛痣）以及肝性脑病等。",
   "0-69": "（1）最可能的病理诊断：右肺中央型鳞状细胞癌。依据为长期吸烟史、肺门附近肿块、痰中带血以及镜下见角化珠和细胞间桥。\n（2）其大体类型属于中央型肺癌，组织学类型属于鳞状细胞癌。\n（3）扩散途径包括：直接蔓延至周围肺组织和胸膜；经淋巴道转移至肺门和纵隔淋巴结；晚期还可经血道转移至肝、脑、骨和肾上腺等。",
   "1-60": "异型性是指肿瘤组织在细胞形态和组织结构上与其来源的正常组织相比所表现出的差异程度。异型性越大，通常提示分化越差、恶性程度越高。",
   "1-61": "假膜性炎是纤维素性炎发生于黏膜时的一种特殊类型。渗出的纤维素、中性粒细胞和坏死黏膜组织共同形成灰白色膜状物，称为假膜。常见于白喉和细菌性痢疾。",
   "1-62": "粥样斑块（粥瘤）是动脉粥样硬化的特征性病变。其表面为纤维帽，深部为脂质核心，核心内含胆固醇结晶、坏死物和泡沫细胞。",
   "1-63": "原发复合征是原发性肺结核的典型病变组合，包括肺内原发灶、引流淋巴管炎和肺门淋巴结结核三部分。",
-  "1-64": "肝硬化是由多种原因所致的肝细胞弥漫性变性坏死、继发纤维组织增生及肝细胞结节状再生，导致肝小叶结构改建和假小叶形成，使肝脏变形、变硬。",
+  "1-64": "肝硬化是由多种原因所致的肝细���弥漫性变性坏死、继发纤维组织增生及肝细胞结节状再生，导致肝小叶结构改建和假小叶形成，使肝脏变形、变硬。",
   "1-65": "炎症渗出的有利作用：①稀释毒素；②带来抗体、补体等防御物质；③纤维素形成网架限制病原体扩散；④白细胞渗出有利于吞噬和杀菌。其有害作用：①渗出过多可压迫重要器官；②纤维素机化可引起粘连；③严重水肿可影响组织功能，如喉头水肿可致窒息。",
   "1-66": "癌与肉瘤的区别：①来源：癌来源于上皮组织，肉瘤来源于间叶组织；②发病率：癌多见，肉瘤少见；③年龄：癌多见于中老年，肉瘤多见于青少年；④转移：癌多经淋巴道，肉瘤多经血道；⑤组织学上癌常形成癌巢，肉瘤多呈弥漫分布。",
   "1-67": "结核病的基本病理变化包括渗出、增生和变质三种，其中最特征性的病变是结核结节和干酪样坏死。其转归可为吸收消散、纤维化包裹、钙化，或坏死液化形成空洞并进一步播散。",
@@ -27,11 +27,11 @@ const SUBJECTIVE_ANSWERS = {
   "2-62": "非典型增生（异型增生）是指上皮细胞增生过程中出现细胞大小不一、核大深染、极性紊乱和核分裂增多等异常改变，但尚未突破基底膜。",
   "2-63": "伤寒小结是伤寒病的特征性病变，由吞噬细菌及组织碎屑的巨噬细胞聚集形成，常见于回肠集合淋巴结、肝、脾和骨髓。",
   "2-64": "Barrett 食管是指食管下段鳞状上皮被柱状上皮取代的化生性改变，多由长期胃食管反流引起，属于食管腺癌的癌前病变。",
-  "2-65": "原发性肺结核与继发性肺结核的区别：①原发性多为初次感染，多见于儿童，常形成原发复合征；②继发性多为再感染或潜伏灶复燃，多见于成人；③原发性多经淋巴道或血道播散，继发性多发生于肺尖，易形成空洞并经支气管播散。",
+  "2-65": "原发性肺结���与继发性肺结核的区别：①原发性多为初次感染，多见于儿童，常形成原发复合征；②继发性多为再感染或潜伏灶复燃，多见于成人；③原发性多经淋巴道或血道播散，继发性多发生于肺尖，易形成空洞并经支气管播散。",
   "2-66": "心肌梗死的并发症包括：①心律失常；②心力衰竭和心源性休克；③心脏破裂（室壁、室间隔或乳头肌破裂）；④附壁血栓形成及栓塞；⑤室壁瘤形成；⑥心包炎等。",
   "2-67": "消化性溃疡底部自浅至深可分为四层：①炎性渗出层；②坏死组织层；③肉芽组织层；④瘢痕组织层。其常见并发症有出血、穿孔、幽门狭窄和癌变（主要见于胃溃疡）。",
   "2-68": "动脉粥样硬化的基本病理变化可概括为：①脂纹形成；②纤维斑块形成；③粥样斑块（粥瘤）形成；④复合病变，如斑块破裂出血、血栓形成、钙化及动脉瘤形成等。",
-  "2-69": "（1）最可能的病理诊断：急性前壁透壁性心肌梗死。依据为典型胸痛、危险因素、V1-V5 导联 ST 段抬高以及肌钙蛋白和 CK-MB 升高。\n（2）ST 段抬高是心肌急性损伤所致损伤电流改变；心肌酶升高是心肌细胞坏死后细胞内成分释放入血所致。\n（3）病理演变大致为：早期凝固性坏死→中性粒细胞浸润→肉芽组织形成→最终瘢痕修复。"
+  "2-69": "（1）最可能的病理诊断：急性前壁透壁性心肌梗死。依据为典型胸痛、危险因素、V1-V5 导联 ST 段抬高以及肌钙蛋白和 CK-MB 升高。\n（2）ST 段抬高是心肌急性损伤所致损伤电流改变；心肌酶升高是心肌细胞坏死后细胞内成分释放入血所致。\n（3）病理演变大致为：早期凝固��坏死→中性粒细胞浸润→肉芽组织形成→最终瘢痕修复。"
 };
 
 let currentPaper = -1;
@@ -49,6 +49,7 @@ const DEEPSEEK_API_BASE = "https://api.deepseek.com/v1";
 const DEEPSEEK_MODEL = "deepseek-chat";
 const AI_STORAGE_KEY = "pathology_deepseek_key";
 const WRONG_BOOK_KEY = "pathology_wrong_book";
+const HISTORY_KEY = "pathology_exam_history";
 let aiResponses = {};
 let deepseekApiKey = "";
 
@@ -93,7 +94,8 @@ function initAnswers(paper) {
 }
 
 function checkResume() {
-  for (let paperIndex = 0; paperIndex < PAPERS.length; paperIndex += 1) {
+  for (let paperIndex = 0; paperIndex < 4; paperIndex += 1) {
+    if (paperIndex === 3 && !PAPERS[3]) continue;
     const raw = localStorage.getItem(storageKey(paperIndex));
     if (!raw) continue;
     try {
@@ -123,11 +125,21 @@ function dismissResume() {
 
 function startExam(paperIndex) {
   localStorage.removeItem(storageKey(paperIndex));
+  if (paperIndex === 3) {
+    var newPaper = buildRandomPaper();
+    localStorage.setItem("pathology_random_paper", JSON.stringify(newPaper));
+    PAPERS[3] = newPaper;
+  }
   loadExam(paperIndex, false);
 }
 
 function loadExam(paperIndex, resume) {
   currentPaper = paperIndex;
+  if (paperIndex === 3 && !PAPERS[3]) {
+    alert("随机卷尚未生成，请重新点击随机卷卡片。");
+    backToLanding();
+    return;
+  }
   const saved = resume ? JSON.parse(localStorage.getItem(storageKey(paperIndex)) || "null") : null;
 
   if (saved && saved.answers) {
@@ -206,7 +218,7 @@ function renderSidebar() {
   const sections = [
     { label: "单选题", start: 0, end: 50 },
     { label: "多选题", start: 50, end: 60 },
-    { label: "名词解释", start: 60, end: 65 },
+    { label: "名��解释", start: 60, end: 65 },
     { label: "简答题", start: 65, end: 69 },
     { label: "病例分析", start: 69, end: 70 }
   ];
@@ -367,7 +379,13 @@ function submitExam() {
       result.correctDisplay = formatOptions(question, question.answer);
     } else {
       result.userDisplay = answer.val || "（未作答）";
-      result.reference = SUBJECTIVE_ANSWERS[`${currentPaper}-${index}`] || "暂无参考答案";
+      var subjKey;
+      if (currentPaper === 3 && question.sourcePaper !== undefined) {
+        subjKey = question.sourcePaper + "-" + question.sourceIndex;
+      } else {
+        subjKey = currentPaper + "-" + index;
+      }
+      result.reference = SUBJECTIVE_ANSWERS[subjKey] || "暂无参考答案";
     }
     return result;
   });
@@ -377,6 +395,7 @@ function submitExam() {
   localStorage.removeItem(storageKey(currentPaper));
   renderResults(singleScore, multiCorrect, objectiveScore, results);
   saveWrongQuestions();
+  saveExamRecord(singleScore, multiCorrect, objectiveScore, results);
   autoGradeAllSubjective();
 }
 
@@ -489,6 +508,18 @@ function calcTotalScore() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function goHome() {
+  if (examActive) {
+    saveProgress();
+    if (!confirm("确定返回主页吗？当前进度已保存，下次可继续。")) return;
+  }
+  if (currentPaper === 3) {
+    localStorage.removeItem("pathology_random_paper");
+    PAPERS[3] = null;
+  }
+  backToLanding();
+}
+
 function backToLanding() {
   examActive = false;
   clearInterval(timerInterval);
@@ -500,6 +531,70 @@ function backToLanding() {
   byId("sidebar").style.display = "none";
   byId("results").style.display = "none";
   byId("landing").style.display = "flex";
+}
+
+function saveExamRecord(singleScore, multiCorrect, objectiveScore, results) {
+  try {
+    const paper = PAPERS[currentPaper];
+    const paperName = PAPER_NAMES[currentPaper];
+    const now = new Date();
+    const ts = now.getFullYear() + "-" +
+      String(now.getMonth() + 1).padStart(2, "0") + "-" +
+      String(now.getDate()).padStart(2, "0") + " " +
+      String(now.getHours()).padStart(2, "0") + ":" +
+      String(now.getMinutes()).padStart(2, "0");
+    const record = {
+      ts: ts,
+      paperName: paperName,
+      singleScore: singleScore,
+      multiScore: multiCorrect * 2,
+      objectiveScore: objectiveScore,
+      totalQuestions: paper.length
+    };
+    var history = [];
+    var raw = localStorage.getItem(HISTORY_KEY);
+    if (raw) { try { history = JSON.parse(raw); } catch(e) {} }
+    history.push(record);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch(e) {}
+}
+
+function showHistory() {
+  var history = [];
+  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch(e) {}
+  if (history.length === 0) {
+    alert("??????");
+    return;
+  }
+  var html = '<div id="historyOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);z-index:200;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()">';
+  html += '<div style="background:#fff;border-radius:18px;padding:24px;max-width:660px;width:90%;max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-size:1.2rem;margin:0">???? (' + history.length + '?)</h2>';
+  html += '<div><button class="btn" style="font-size:.82rem;padding:6px 12px;margin-right:8px" onclick="clearHistory()">??</button>';
+  html += '<button class="btn" style="font-size:.82rem;padding:6px 12px" onclick="document.getElementById(\"historyOverlay\").remove()">??</button></div></div>';
+
+  // Reverse chronological order (newest first)
+  for (var i = history.length - 1; i >= 0; i--) {
+    var r = history[i];
+    var pct = r.objectiveScore ? Math.round(r.objectiveScore / 70 * 100) : 0;
+    var color = pct >= 80 ? "var(--ok)" : pct >= 60 ? "var(--warn)" : "var(--danger)";
+    html += '<div style="background:#f8fafc;border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+    html += '<div><strong>' + escapeHtml(r.paperName) + '</strong><span style="color:var(--muted);font-size:.82rem;margin-left:8px">' + escapeHtml(r.ts) + '</span></div>';
+    html += '<div style="display:flex;align-items:center;gap:10px">';
+    html += '<span style="font-size:.9rem;color:var(--muted)">?? ' + (r.singleScore || 0) + '/50 ?? ' + (r.multiScore || 0) + '/20</span>';
+    html += '<span style="font-weight:900;font-size:1.1rem;color:' + color + '">' + (r.objectiveScore || 0) + '/70 (' + pct + '%)</span>';
+    html += '</div></div>';
+  }
+  html += '</div></div>';
+  document.body.insertAdjacentHTML("beforeend", html);
+}
+
+function clearHistory() {
+  if (confirm("?????????????")) {
+    localStorage.removeItem(HISTORY_KEY);
+    var overlay = document.getElementById("historyOverlay");
+    if (overlay) overlay.remove();
+    alert("???????");
+  }
 }
 
 function saveWrongQuestions() {
