@@ -43,7 +43,6 @@ function getPapers() { return currentSubject === "tcm" ? TCM_PAPERS : PAPERS; }
 function getSubjectiveAnswers() { return currentSubject === "tcm" ? TCM_SUBJECTIVE_ANSWERS : SUBJECTIVE_ANSWERS; }
 function getQuestionPool() { return currentSubject === "tcm" ? TCM_QUESTION_POOL : QUESTION_POOL; }
 
-﻿const getCfg().duration = 90 * 60;
 
 const SUBJECTIVE_ANSWERS = {
   "0-60": "由新生毛细血管和增生的成纤维细胞构成，并伴有炎症细胞浸润的幼稚结缔组织。肉眼呈鲜红色、颗粒状、柔软湿润，形似鲜嫩的肉芽。其作用包括抗感染保护创面、填补组织缺损以及机化坏死组织和血栓等。",
@@ -756,7 +755,7 @@ async function aiExplainWrong(index) {
   if (!box) return;
   box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 解析...</span>';
   try {
-    const systemPrompt = ""你是一位" + getCfg().name + "教授。请用中文简要解释这道" + getCfg().name + "题目的正确答案"，说明为什么这个答案是正确的，并指出常见错误选项的误区。请直接给出解析，不要问候。";
+    const systemPrompt = "你是一位" + getCfg().name + "教授。请用中文简要解释这道" + getCfg().name + "题目的正确答案，说明为什么这个答案是正确的，并指出常见错误选项的误区。请直接给出解析，不要问候。";
     const userPrompt = "题目：" + question.q + "\n选项：" + question.options.join("\n") + "\n正确答案：" + result.correctDisplay + "\n我的答案：" + result.userDisplay;
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 解析</strong><p>' + br(content) + '</p></div>';
@@ -775,7 +774,7 @@ async function aiGradeSubjective(index) {
   if (!box) return;
   box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 批改...</span>';
   try {
-    const systemPrompt = ""你是一位" + getCfg().name + "教授。请根据参考答案"，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。最后一行用【得分：X】格式输出分数。";
+    const systemPrompt = "你是一位" + getCfg().name + "教授。请根据参考答案，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。最后一行用【得分：X】格式输出分数。";
     const userPrompt = "题目：" + question.q + "\n参考答案：" + (result.reference || "无") + "\n学生作答：" + (result.userDisplay || "（未作答）");
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 批改</strong><p>' + br(content) + '</p></div>';
