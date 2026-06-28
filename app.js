@@ -1,5 +1,49 @@
-﻿const PAPER_NAMES = ["卷一", "卷二", "卷三", "随机卷"];
-const EXAM_DURATION_SECONDS = 90 * 60;
+// ========== Subject Configuration ==========
+let currentSubject = "pathology"; // "pathology" | "tcm"
+
+const SUBJECT_CONFIG = {
+  pathology: {
+    name: "病理学",
+    paperNames: ["卷一", "卷二", "卷三", "随机卷"],
+    duration: 90 * 60,
+    sections: [
+      { label: "单选题", type: "single", count: 50 },
+      { label: "多选题", type: "multi", count: 10 },
+      { label: "名词解释", type: "term", count: 5 },
+      { label: "简答题", type: "short", count: 4 },
+      { label: "病例分析", type: "essay", count: 1 }
+    ],
+    typeNames: { single: "单选题", multi: "多选题（全对得分）", term: "名词解释", short: "简答题", essay: "病例分析" },
+    objectiveTypes: ["single", "multi"],
+    subjectiveTypes: ["term", "short", "essay"],
+    storagePrefix: "pathology",
+    randomCounts: { single: 50, multi: 10, term: 5, short: 4, essay: 1 }
+  },
+  tcm: {
+    name: "中医基础理论",
+    paperNames: ["卷一", "卷二", "卷三", "随机卷"],
+    duration: 120 * 60,
+    sections: [
+      { label: "单选题", type: "single", count: 20 },
+      { label: "多选题", type: "multi", count: 10 },
+      { label: "判断题", type: "tf", count: 10 },
+      { label: "简答题", type: "short", count: 3 },
+      { label: "论述题", type: "essay", count: 2 }
+    ],
+    typeNames: { single: "单选题", multi: "多选题（全对得分）", tf: "判断题", short: "简答题", essay: "论述题" },
+    objectiveTypes: ["single", "multi", "tf"],
+    subjectiveTypes: ["short", "essay"],
+    storagePrefix: "tcm",
+    randomCounts: { single: 20, multi: 10, tf: 10, short: 3, essay: 2 }
+  }
+};
+
+function getCfg() { return SUBJECT_CONFIG[currentSubject]; }
+function getPapers() { return currentSubject === "tcm" ? TCM_PAPERS : PAPERS; }
+function getSubjectiveAnswers() { return currentSubject === "tcm" ? TCM_SUBJECTIVE_ANSWERS : SUBJECTIVE_ANSWERS; }
+function getQuestionPool() { return currentSubject === "tcm" ? TCM_QUESTION_POOL : QUESTION_POOL; }
+
+﻿const getCfg().duration = 90 * 60;
 
 const SUBJECTIVE_ANSWERS = {
   "0-60": "由新生毛细血管和增生的成纤维细胞构成，并伴有炎症细胞浸润的幼稚结缔组织。肉眼呈鲜红色、颗粒状、柔软湿润，形似鲜嫩的肉芽。其作用包括抗感染保护创面、填补组织缺损以及机化坏死组织和血栓等。",
@@ -36,7 +80,7 @@ const SUBJECTIVE_ANSWERS = {
 
 let currentPaper = -1;
 let currentQ = 0;
-let timeLeft = EXAM_DURATION_SECONDS;
+let timeLeft = getCfg().duration;
 let userAnswers = [];
 let markedQs = new Set();
 let timerInterval = null;
@@ -48,8 +92,8 @@ const OPTION_HOVER_RESTORE_EVENTS = ["pointermove", "pointerdown", "mousemove", 
 const DEEPSEEK_API_BASE = "https://api.deepseek.com/v1";
 const DEEPSEEK_MODEL = "deepseek-chat";
 const AI_STORAGE_KEY = "pathology_deepseek_key";
-const WRONG_BOOK_KEY = "pathology_wrong_book";
-const HISTORY_KEY = "pathology_exam_history";
+function getWrongBookKey() { return getCfg().storagePrefix + "_wrong_book"; }
+function getHistoryKey() { return getCfg().storagePrefix + "_exam_history"; }
 let aiResponses = {};
 let deepseekApiKey = "";
 
@@ -82,12 +126,12 @@ function br(value) {
 }
 
 function storageKey(paperIndex) {
-  return `pathology_exam_${paperIndex}`;
+  return `${getCfg().storagePrefix}_exam_${paperIndex}`;
 }
 
 function initAnswers(paper) {
   return paper.map((question) => {
-    if (question.type === "single") return { val: -1 };
+    if (question.type === "single" || question.type === "tf") return { val: -1 };
     if (question.type === "multi") return { val: [] };
     return { val: "" };
   });
@@ -95,13 +139,13 @@ function initAnswers(paper) {
 
 function checkResume() {
   for (let paperIndex = 0; paperIndex < 4; paperIndex += 1) {
-    if (paperIndex === 3 && !PAPERS[3]) continue;
+    if (paperIndex === 3 && !getPapers()[3]) continue;
     const raw = localStorage.getItem(storageKey(paperIndex));
     if (!raw) continue;
     try {
       const saved = JSON.parse(raw);
       if (saved.examActive && saved.timeLeft > 0) {
-        byId("resumeMsg").textContent = `检测到未完成的${PAPER_NAMES[paperIndex]}（剩余 ${Math.floor(saved.timeLeft / 60)} 分 ${saved.timeLeft % 60} 秒），是否继续？`;
+        byId("resumeMsg").textContent = `检测到未完成的${getCfg().paperNames[paperIndex]}（剩余 ${Math.floor(saved.timeLeft / 60)} 分 ${saved.timeLeft % 60} 秒），是否继续？`;
         byId("resumeBox").style.display = "block";
         byId("resumeBox").dataset.paper = String(paperIndex);
         return;
@@ -127,15 +171,15 @@ function startExam(paperIndex) {
   localStorage.removeItem(storageKey(paperIndex));
   if (paperIndex === 3) {
     var newPaper = buildRandomPaper();
-    localStorage.setItem("pathology_random_paper", JSON.stringify(newPaper));
-    PAPERS[3] = newPaper;
+    localStorage.setItem("${getCfg().storagePrefix}_random_paper", JSON.stringify(newPaper));
+    getPapers()[3] = newPaper;
   }
   loadExam(paperIndex, false);
 }
 
 function loadExam(paperIndex, resume) {
   currentPaper = paperIndex;
-  if (paperIndex === 3 && !PAPERS[3]) {
+  if (paperIndex === 3 && !getPapers()[3]) {
     alert("随机卷尚未生成，请重新点击随机卷卡片。");
     backToLanding();
     return;
@@ -149,8 +193,8 @@ function loadExam(paperIndex, resume) {
     markedQs = new Set(saved.markedQs || []);
     selfScores = saved.selfScores || {};
   } else {
-    userAnswers = initAnswers(PAPERS[paperIndex]);
-    timeLeft = EXAM_DURATION_SECONDS;
+    userAnswers = initAnswers(getPapers()[paperIndex]);
+    timeLeft = getCfg().duration;
     currentQ = 0;
     markedQs = new Set();
     selfScores = {};
@@ -161,7 +205,7 @@ function loadExam(paperIndex, resume) {
   byId("results").style.display = "none";
   byId("examArea").style.display = "block";
   byId("sidebar").style.display = "block";
-  byId("paperTitle").textContent = `${PAPER_NAMES[paperIndex]} · 病理学模拟考试`;
+  byId("paperTitle").textContent = `${getCfg().paperNames[paperIndex]} · 模拟考试`;
 
   examActive = true;
   renderSidebar();
@@ -208,69 +252,63 @@ function updateTimerDisplay() {
 
 function isAnswered(question, answer) {
   if (!answer) return false;
-  if (question.type === "single") return answer.val >= 0;
+  if (question.type === "single" || question.type === "tf") return answer.val >= 0;
   if (question.type === "multi") return answer.val.length > 0;
   return answer.val.trim().length > 0;
 }
 
 function renderSidebar() {
-  const paper = PAPERS[currentPaper];
-  const sections = [
-    { label: "单选题", start: 0, end: 50 },
-    { label: "多选题", start: 50, end: 60 },
-    { label: "名��解释", start: 60, end: 65 },
-    { label: "简答题", start: 65, end: 69 },
-    { label: "病例分析", start: 69, end: 70 }
-  ];
+  const paper = getPapers()[currentPaper];
+  const cfg = getCfg();
+  let idx = 0;
+  const sections = cfg.sections.map(s => {
+    const start = idx;
+    idx += s.count;
+    return { label: s.label, start, end: idx };
+  });
 
   let html = '<h3>答题卡</h3><div class="q-grid">';
   for (const section of sections) {
-    html += `<div class="section-label">${section.label}</div>`;
+    html += '<div class="section-label">' + section.label + '</div>';
     for (let index = section.start; index < section.end; index += 1) {
       let className = "q-dot";
       if (index === currentQ) className += " current";
       if (markedQs.has(index)) className += " marked";
       if (isAnswered(paper[index], userAnswers[index])) className += " answered";
-      html += `<div class="${className}" onclick="jumpTo(${index})">${index + 1}</div>`;
+      html += '<div class="' + className + '" onclick="jumpTo(' + index + ')">' + (index + 1) + '</div>';
     }
   }
   html += "</div>";
   const answeredCount = paper.filter((question, index) => isAnswered(question, userAnswers[index])).length;
-  html += `<div class="progress-text">${answeredCount}/${paper.length} 已答</div>`;
+  html += '<div class="progress-text">' + answeredCount + '/' + paper.length + ' 已答</div>';
   byId("sidebar").innerHTML = html;
 }
 
 function renderQuestion() {
-  const question = PAPERS[currentPaper][currentQ];
+  const question = getPapers()[currentPaper][currentQ];
   const answer = userAnswers[currentQ];
-  const typeNames = {
-    single: "单选题",
-    multi: "多选题（全对得分）",
-    term: "名词解释",
-    short: "简答题",
-    essay: "病例分析"
-  };
+  const typeNames = getCfg().typeNames;
 
   let html = '<article class="question-card">';
-  html += `<span class="badge ${question.type}">${typeNames[question.type]} · ${currentQ + 1}/${PAPERS[currentPaper].length}</span>`;
-  html += `<div class="question-text">${br(question.q)}</div>`;
+  html += '<span class="badge ' + question.type + '">' + typeNames[question.type] + ' · ' + (currentQ + 1) + '/' + getPapers()[currentPaper].length + '</span>';
+  html += '<div class="question-text">' + br(question.q) + '</div>';
 
-  if (question.type === "single") {
+  if (question.type === "single" || question.type === "tf") {
     html += '<div class="options">';
     question.options.forEach((option, optionIndex) => {
       const selected = answer.val === optionIndex ? " selected" : "";
-      html += `<label class="option${selected}" onclick="selectSingle(${optionIndex})">${escapeHtml(option)}</label>`;
+      html += '<label class="option' + selected + '" onclick="selectSingle(' + optionIndex + ')">' + escapeHtml(option) + '</label>';
     });
     html += "</div>";
   } else if (question.type === "multi") {
     html += '<div class="options">';
     question.options.forEach((option, optionIndex) => {
       const selected = answer.val.includes(optionIndex) ? " selected" : "";
-      html += `<label class="option${selected}" onclick="selectMulti(${optionIndex})">${escapeHtml(option)}</label>`;
+      html += '<label class="option' + selected + '" onclick="selectMulti(' + optionIndex + ')">' + escapeHtml(option) + '</label>';
     });
     html += "</div>";
   } else {
-    html += `<textarea class="text-answer" id="textAnswer" placeholder="在此输入你的答案..." oninput="saveTextAnswer()">${escapeHtml(answer.val)}</textarea>`;
+    html += '<textarea class="text-answer" id="textAnswer" placeholder="在此输入你的答案..." oninput="saveTextAnswer()">' + escapeHtml(answer.val) + '</textarea>';
   }
 
   html += "</article>";
@@ -290,7 +328,7 @@ function prevQ() {
 }
 
 function nextQ() {
-  if (currentQ >= PAPERS[currentPaper].length - 1) return;
+  if (currentQ >= getPapers()[currentPaper].length - 1) return;
   jumpTo(currentQ + 1);
 }
 
@@ -306,7 +344,7 @@ function selectSingle(optionIndex) {
   renderQuestion();
   renderSidebar();
   saveProgress();
-  if (currentQ < PAPERS[currentPaper].length - 1) {
+  if (currentQ < getPapers()[currentPaper].length - 1) {
     window.setTimeout(() => {
       nextQ();
       suppressOptionHoverUntilInput();
@@ -331,7 +369,7 @@ function saveTextAnswer() {
 }
 
 function confirmSubmit() {
-  const paper = PAPERS[currentPaper];
+  const paper = getPapers()[currentPaper];
   const unanswered = paper.filter((question, index) => !isAnswered(question, userAnswers[index])).length;
   const message = unanswered > 0 ? `确定要交卷吗？\n还有 ${unanswered} 道题未作答。` : "确定要交卷吗？";
   if (confirm(message)) submitExam();
@@ -351,8 +389,9 @@ function formatOptions(question, indexes) {
 
 function subjectiveMaxScore(type) {
   if (type === "term") return 2;
-  if (type === "short") return 3;
-  return 8;
+  if (type === "short") return 5;
+  if (type === "essay") return 10;
+  return 5;
 }
 
 function submitExam() {
@@ -361,8 +400,9 @@ function submitExam() {
   clearInterval(timerInterval);
   document.body.classList.remove("exam-open");
 
-  const paper = PAPERS[currentPaper];
+  const paper = getPapers()[currentPaper];
   let singleScore = 0;
+  let tfScore = 0;
   let multiCorrect = 0;
   const results = paper.map((question, index) => {
     const answer = userAnswers[index];
@@ -370,6 +410,11 @@ function submitExam() {
     if (question.type === "single") {
       result.correct = answer.val === question.answer;
       if (result.correct) singleScore += 1;
+      result.userDisplay = answer.val >= 0 ? question.options[answer.val] : "（未作答）";
+      result.correctDisplay = question.options[question.answer];
+    } else if (question.type === "tf") {
+      result.correct = answer.val === question.answer;
+      if (result.correct) tfScore += 1;
       result.userDisplay = answer.val >= 0 ? question.options[answer.val] : "（未作答）";
       result.correctDisplay = question.options[question.answer];
     } else if (question.type === "multi") {
@@ -385,33 +430,33 @@ function submitExam() {
       } else {
         subjKey = currentPaper + "-" + index;
       }
-      result.reference = SUBJECTIVE_ANSWERS[subjKey] || "暂无参考答案";
+      result.reference = getSubjectiveAnswers()[subjKey] || "暂无参考答案";
     }
     return result;
   });
 
-  const objectiveScore = singleScore + multiCorrect * 2;
-  resultState = { paperIndex: currentPaper, objectiveScore, results };
+  const objectiveScore = singleScore + tfScore + multiCorrect * 2;
+  resultState = { paperIndex: currentPaper, objectiveScore, results, singleScore, tfScore, multiCorrect };
   localStorage.removeItem(storageKey(currentPaper));
-  renderResults(singleScore, multiCorrect, objectiveScore, results);
+  renderResults(singleScore, tfScore, multiCorrect, objectiveScore, results);
   saveWrongQuestions();
-  saveExamRecord(singleScore, multiCorrect, objectiveScore, results);
+  saveExamRecord(singleScore, tfScore, multiCorrect, objectiveScore, results);
   autoGradeAllSubjective();
 }
 
-function renderResults(singleScore, multiCorrect, objectiveScore, results) {
-  const paper = PAPERS[currentPaper];
-  let html = `<section class="score-card"><div class="big-score" id="totalScore">${objectiveScore}</div><p>客观题得分：单选 ${singleScore}/50，多选 ${multiCorrect * 2}/20，满分 70</p></section>`;
+function renderResults(singleScore, tfScore, multiCorrect, objectiveScore, results) {
+  const paper = getPapers()[currentPaper];
+  let html = `<section class="score-card"><div class="big-score" id="totalScore">${objectiveScore}</div><p>客观题得分：单选 ${singleScore}，判断 ${tfScore}，多选 ${multiCorrect * 2}</p></section>`;
   html += '<section class="answer-review subj"><strong>主观题自评</strong><p style="color:#64748b;margin-top:6px">请对照参考答案自评，评完点击底部“计算总分”。</p></section>';
 
-  const wrongResults = results.filter((result) => ["single", "multi"].includes(result.type) && !result.correct);
+  const wrongResults = results.filter((result) => getCfg().objectiveTypes.includes(result.type) && !result.correct);
   if (wrongResults.length > 0) {
     html += '<section class="answer-review incorrect" id="wrong-summary"><strong>错题汇总</strong>';
     html += `<p style="color:#64748b;font-size:.9rem;margin:6px 0 12px">本次客观题共错 ${wrongResults.length} 题，已保存到首页错题册。</p>`;
     wrongResults.forEach((result) => {
       const question = paper[result.index];
       html += '<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px">';
-      html += '<strong>第 ' + (result.index + 1) + ' 题（' + (result.type === "single" ? "单选" : "多选") + '）</strong>';
+      html += '<strong>第 ' + (result.index + 1) + ' 题（' + getCfg().typeNames[result.type] + '）</strong>';
       html += '<p style="font-size:.9rem;margin:6px 0">' + escapeHtml(question.q) + '</p>';
       html += '<p style="color:var(--danger);font-size:.85rem;margin:3px 0"><b>你的答案：</b>' + escapeHtml(result.userDisplay) + '</p>';
       html += '<p style="color:var(--ok);font-size:.85rem;margin:3px 0"><b>正确答案：</b>' + escapeHtml(result.correctDisplay) + '</p>';
@@ -425,9 +470,9 @@ function renderResults(singleScore, multiCorrect, objectiveScore, results) {
   results.forEach((result) => {
     const question = paper[result.index];
     const questionNumber = result.index + 1;
-    if (["term", "short", "essay"].includes(result.type)) {
+    if (getCfg().subjectiveTypes.includes(result.type)) {
       const maxScore = subjectiveMaxScore(result.type);
-      const label = { term: "名词解释", short: "简答题", essay: "病例分析" }[result.type];
+      const label = getCfg().typeNames[result.type];
       html += `<section class="answer-review subj"><strong>第 ${questionNumber} 题（${label}，${maxScore} 分）</strong>`;
       html += `<div class="question-text">${br(question.q)}</div>`;
       html += `<p style="color:#64748b;font-size:.9rem"><b>你的答案：</b><br>${br(result.userDisplay)}</p>`;
@@ -488,7 +533,7 @@ function updateTotalScoreDisplay() {
 
 function currentSubjectiveScore() {
   if (!resultState) return 0;
-  const paper = PAPERS[resultState.paperIndex];
+  const paper = getPapers()[resultState.paperIndex];
   return paper.reduce((total, question, index) => {
     if (["term", "short", "essay"].includes(question.type) && selfScores[index] !== undefined) {
       return total + selfScores[index];
@@ -514,8 +559,8 @@ function goHome() {
     if (!confirm("确定返回主页吗？当前进度已保存，下次可继续。")) return;
   }
   if (currentPaper === 3) {
-    localStorage.removeItem("pathology_random_paper");
-    PAPERS[3] = null;
+    localStorage.removeItem("${getCfg().storagePrefix}_random_paper");
+    getPapers()[3] = null;
   }
   backToLanding();
 }
@@ -533,10 +578,10 @@ function backToLanding() {
   byId("landing").style.display = "flex";
 }
 
-function saveExamRecord(singleScore, multiCorrect, objectiveScore, results) {
+function saveExamRecord(singleScore, tfScore, multiCorrect, objectiveScore, results) {
   try {
-    const paper = PAPERS[currentPaper];
-    const paperName = PAPER_NAMES[currentPaper];
+    const paper = getPapers()[currentPaper];
+    const paperName = getCfg().paperNames[currentPaper];
     const now = new Date();
     const ts = now.getFullYear() + "-" +
       String(now.getMonth() + 1).padStart(2, "0") + "-" +
@@ -552,16 +597,16 @@ function saveExamRecord(singleScore, multiCorrect, objectiveScore, results) {
       totalQuestions: paper.length
     };
     var history = [];
-    var raw = localStorage.getItem(HISTORY_KEY);
+    var raw = localStorage.getItem(getHistoryKey());
     if (raw) { try { history = JSON.parse(raw); } catch(e) {} }
     history.push(record);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    localStorage.setItem(getHistoryKey(), JSON.stringify(history));
   } catch(e) {}
 }
 
 function showHistory() {
   var history = [];
-  try { history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch(e) {}
+  try { history = JSON.parse(localStorage.getItem(getHistoryKey()) || "[]"); } catch(e) {}
   if (history.length === 0) {
     alert("??????");
     return;
@@ -590,7 +635,7 @@ function showHistory() {
 
 function clearHistory() {
   if (confirm("?????????????")) {
-    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(getHistoryKey());
     var overlay = document.getElementById("historyOverlay");
     if (overlay) overlay.remove();
     alert("???????");
@@ -599,17 +644,17 @@ function clearHistory() {
 
 function saveWrongQuestions() {
   if (!resultState) return;
-  const paper = PAPERS[resultState.paperIndex];
+  const paper = getPapers()[resultState.paperIndex];
   let book = [];
-  try { book = JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || "[]"); } catch(e) {}
+  try { book = JSON.parse(localStorage.getItem(getWrongBookKey()) || "[]"); } catch(e) {}
   resultState.results.forEach((r) => {
     const q = paper[r.index];
-    if (["single", "multi"].includes(r.type) && !r.correct) {
-      const key = PAPER_NAMES[resultState.paperIndex] + "-" + r.index;
+    if (getCfg().objectiveTypes.includes(r.type) && !r.correct) {
+      const key = getCfg().paperNames[resultState.paperIndex] + "-" + r.index;
       if (!book.find(e => e.key === key)) {
         book.push({
           key: key,
-          paper: PAPER_NAMES[resultState.paperIndex],
+          paper: getCfg().paperNames[resultState.paperIndex],
           paperIndex: resultState.paperIndex,
           index: r.index,
           type: r.type,
@@ -622,12 +667,12 @@ function saveWrongQuestions() {
       }
     }
   });
-  localStorage.setItem(WRONG_BOOK_KEY, JSON.stringify(book));
+  localStorage.setItem(getWrongBookKey(), JSON.stringify(book));
 }
 
 function showWrongBook() {
   let book = [];
-  try { book = JSON.parse(localStorage.getItem(WRONG_BOOK_KEY) || "[]"); } catch(e) {}
+  try { book = JSON.parse(localStorage.getItem(getWrongBookKey()) || "[]"); } catch(e) {}
   if (book.length === 0) {
     alert("暂无错题记录");
     return;
@@ -646,7 +691,7 @@ function showWrongBook() {
     html += '<h3 style="color:var(--primary);margin:14px 0 8px;font-size:1rem">' + escapeHtml(paperName) + '</h3>';
     items.forEach(e => {
       html += '<div style="background:#fef2f2;border-left:4px solid var(--danger);border-radius:10px;padding:12px 14px;margin-bottom:10px">';
-      html += '<strong>第 ' + (e.index + 1) + ' 题 (' + (e.type === "single" ? "单选" : "多选") + ')</strong>';
+      html += '<strong>第 ' + (e.index + 1) + ' 题 (' + getCfg().typeNames[e.type] + ')</strong>';
       html += '<p style="margin:6px 0;font-size:.92rem">' + escapeHtml(e.question) + '</p>';
       html += '<p style="color:var(--danger);font-size:.85rem;margin:3px 0"><b>你的答案：</b>' + escapeHtml(e.userAnswer) + '</p>';
       html += '<p style="color:var(--ok);font-size:.85rem;margin:3px 0"><b>正确答案：</b>' + escapeHtml(e.correctAnswer) + '</p>';
@@ -659,7 +704,7 @@ function showWrongBook() {
 
 function clearWrongBook() {
   if (confirm("确定要清空所有错题记录吗？")) {
-    localStorage.removeItem(WRONG_BOOK_KEY);
+    localStorage.removeItem(getWrongBookKey());
     const overlay = document.getElementById("wrongBookOverlay");
     if (overlay) overlay.remove();
     alert("错题册已清空");
@@ -706,12 +751,12 @@ async function callDeepSeek(systemPrompt, userPrompt) {
 async function aiExplainWrong(index) {
   if (!resultState) return;
   const result = resultState.results[index];
-  const question = PAPERS[resultState.paperIndex][index];
+  const question = getPapers()[resultState.paperIndex][index];
   const box = byId("ai-explain-" + index);
   if (!box) return;
   box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 解析...</span>';
   try {
-    const systemPrompt = "你是一位病理学教授。请用中文简要解释这道病理学题目的正确答案，说明为什么这个答案是正确的，并指出常见错误选项的误区。请直接给出解析，不要问候。";
+    const systemPrompt = ""你是一位" + getCfg().name + "教授。请用中文简要解释这道" + getCfg().name + "题目的正确答案"，说明为什么这个答案是正确的，并指出常见错误选项的误区。请直接给出解析，不要问候。";
     const userPrompt = "题目：" + question.q + "\n选项：" + question.options.join("\n") + "\n正确答案：" + result.correctDisplay + "\n我的答案：" + result.userDisplay;
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 解析</strong><p>' + br(content) + '</p></div>';
@@ -724,13 +769,13 @@ async function aiExplainWrong(index) {
 async function aiGradeSubjective(index) {
   if (!resultState) return;
   const result = resultState.results[index];
-  const question = PAPERS[resultState.paperIndex][index];
+  const question = getPapers()[resultState.paperIndex][index];
   const maxScore = subjectiveMaxScore(result.type);
   const box = byId("ai-grade-" + index);
   if (!box) return;
   box.innerHTML = '<span style="color:var(--muted)">正在请 DeepSeek 批改...</span>';
   try {
-    const systemPrompt = "你是一位病理学教授。请根据参考答案，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。最后一行用【得分：X】格式输出分数。";
+    const systemPrompt = ""你是一位" + getCfg().name + "教授。请根据参考答案"，对学生作答进行批改。请给出：1) 得分（满分" + maxScore + "分） 2) 简短评语 3) 改进建议。请直接给出批改结果，不要问候。最后一行用【得分：X】格式输出分数。";
     const userPrompt = "题目：" + question.q + "\n参考答案：" + (result.reference || "无") + "\n学生作答：" + (result.userDisplay || "（未作答）");
     const content = await callDeepSeek(systemPrompt, userPrompt);
     box.innerHTML = '<div class="ai-response"><strong>✓ AI 批改</strong><p>' + br(content) + '</p></div>';
@@ -749,10 +794,10 @@ async function aiGradeSubjective(index) {
 
 async function autoGradeAllSubjective() {
   if (!resultState || !getApiKey()) return;
-  const paper = PAPERS[resultState.paperIndex];
+  const paper = getPapers()[resultState.paperIndex];
   for (let i = 0; i < paper.length; i++) {
     const q = paper[i];
-    if (["term", "short", "essay"].includes(q.type)) {
+    if (getCfg().subjectiveTypes.includes(q.type)) {
       await aiGradeSubjective(i);
       await new Promise(r => setTimeout(r, 800));
     }

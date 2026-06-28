@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>病理学模拟考试 · 三套卷</title>
+<title>医学模拟考试 · 双学科</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--primary:#2f5bea;--primary-dark:#172554;--danger:#dc2626;--ok:#16a34a;--warn:#f59e0b;--ink:#172033;--muted:#64748b;--bg:#f6f8fc;--card:#fff;--line:#e2e8f0}
@@ -19,6 +19,7 @@ button,input,textarea{font-family:inherit}
 @media(max-width:768px){.topbar{padding:10px 12px}.topbar h1{font-size:.98rem}.timer{font-size:.96rem;padding:6px 11px}.hero{padding:22px 16px}.hero h2{font-size:1.16rem}.hero p{font-size:.92rem}.paper-cards{grid-template-columns:1fr}.exam-header{align-items:stretch}.nav-buttons{width:100%;display:grid;grid-template-columns:repeat(2,1fr)}.btn{padding:11px 12px}.question-card{padding:16px}.question-text{font-size:1rem}.text-answer{min-height:220px}.sidebar{position:static;width:auto;display:block!important;border-left:0;box-shadow:none;margin:12px 0;border-radius:16px}.q-grid{grid-template-columns:repeat(10,1fr)}}
 
 .api-key-section{background:var(--card);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(15,23,42,.05)}.api-key-section input{flex:1;min-width:200px;border:2px solid var(--line);border-radius:10px;padding:10px 14px;font-size:.92rem}.api-key-section input:focus{outline:none;border-color:var(--primary)}.ai-grade-btn,.ai-explain-btn{border-color:#7c3aed;color:#7c3aed;font-size:.85rem;padding:6px 12px;margin-top:6px}.ai-grade-btn:hover,.ai-explain-btn:hover{border-color:#5b21b6;color:#5b21b6;background:#f5f3ff}.ai-response{background:#f5f3ff;border-radius:12px;padding:14px 16px;margin-top:10px;font-size:.9rem;line-height:1.72;white-space:pre-wrap}.ai-response.ai-error{background:#fef2f2;color:#dc2626}.ai-grade-box,.ai-explain-box{margin-top:8px}
+.subject-switcher{display:flex;justify-content:center;gap:0;margin:0 auto 8px;max-width:360px;background:var(--card);border-radius:14px;padding:5px;box-shadow:0 2px 10px rgba(15,23,42,.05)}.subject-tab{flex:1;text-align:center;padding:10px 16px;border-radius:11px;cursor:pointer;font-weight:700;font-size:.94rem;transition:.2s;color:var(--muted);border:none;background:transparent}.subject-tab.active{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(47,91,234,.28)}.subject-tab:hover:not(.active){color:var(--primary)}
 </style>
 </head>
 <body>
@@ -28,9 +29,13 @@ button,input,textarea{font-family:inherit}
   </header>
 
   <main class="landing" id="landing">
-    <section class="hero">
-      <h2>病理学（第10版）期末模拟考试</h2>
-      <p>三套完整试卷 · 每套含 50 单选 + 10 多选 + 5 名词解释 + 4 简答题 + 1 病例分析<br>限时 90 分钟 · 支持断点续做 · 客观题自动批改</p>
+    <div class="subject-switcher" style="margin-top:16px">
+    <button class="subject-tab active" id="tabPathology" onclick="switchSubject('pathology')">病理学</button>
+    <button class="subject-tab" id="tabTCM" onclick="switchSubject('tcm')">中医基础理论</button>
+  </div>
+    <section class="hero" id="heroSection">
+      <h2 id="heroTitle">病理学（第10版）期末模拟考试</h2>
+      <p id="heroDesc">三套完整试卷 · 每套含 50 单选 + 10 多选 + 5 名词解释 + 4 简答题 + 1 病例分析<br>限时 90 分钟 · 支持断点续做 · 客观题自动批改</p>
     </section>
 
     <section class="resume-box" id="resumeBox">
@@ -47,26 +52,26 @@ button,input,textarea{font-family:inherit}
     </section>
     <div style="text-align:center;margin-top:4px"><button class="btn" type="button" onclick="showWrongBook()" style="border-color:#7c3aed;color:#7c3aed">错题册</button> <button class="btn" type="button" onclick="showHistory()" style="border-color:#2f5bea;color:#2f5bea">做题记录</button></div>
     <h2 class="section-title">选择试卷</h2>
-    <section class="paper-cards">
+    <section class="paper-cards" id="paperCards">
       <article class="paper-card" onclick="startExam(0)">
         <div class="paper-num">卷一</div>
-        <div class="paper-title">综合模拟卷一</div>
-        <div class="paper-info"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
+        <div class="paper-title" id="cardTitle1">综合模拟卷一</div>
+        <div class="paper-info" id="cardInfo1"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
       </article>
       <article class="paper-card" onclick="startExam(1)">
         <div class="paper-num">卷二</div>
-        <div class="paper-title">综合模拟卷二</div>
-        <div class="paper-info"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
+        <div class="paper-title" id="cardTitle2">综合模拟卷二</div>
+        <div class="paper-info" id="cardInfo2"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
       </article>
       <article class="paper-card" onclick="startExam(2)">
         <div class="paper-num">卷三</div>
-        <div class="paper-title">综合模拟卷三</div>
-        <div class="paper-info"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
+        <div class="paper-title" id="cardTitle3">综合模拟卷三</div>
+        <div class="paper-info" id="cardInfo3"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
       </article>
       <article class="paper-card random-card" onclick="startExam(3)">
         <div class="paper-num">☄</div>
-        <div class="paper-title">随机模拟卷</div>
-        <div class="paper-info"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
+        <div class="paper-title" id="cardTitle4">随机模拟卷</div>
+        <div class="paper-info" id="cardInfo4"><span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span></div>
         <div style="margin-top:10px;font-size:.78rem;color:#92400e">每次随机抽题 · 卷卷不同</div>
       </article>
     </section>
@@ -88,9 +93,46 @@ button,input,textarea{font-family:inherit}
 
   <aside class="sidebar" id="sidebar"></aside>
   <main class="results" id="results"></main>
-  <footer class="footer">病理学第 10 版 · 平板友好 · 可部署到 GitHub Pages</footer>
+  <footer class="footer" id="pageFooter">病理学 第10版 & 中医基础理论 · 平板友好 · 可部署到 GitHub Pages</footer>
 
   <script src="./papers.js?v=20260627"></script>
+  <script src="./tcm-papers.js?v=20260628"></script>
   <script src="./app.js?v=20260627"></script>
+<script>
+function switchSubject(subj) {
+  currentSubject = subj;
+  // Update tab active states
+  document.getElementById("tabPathology").classList.toggle("active", subj === "pathology");
+  document.getElementById("tabTCM").classList.toggle("active", subj === "tcm");
+  // Update subject config
+  const cfg = getCfg();
+  // Update hero
+  const heroData = {
+    pathology: { title: "病理学（第10版）期末模拟考试", desc: "三套完整试卷 · 每套含 50 单选 + 10 多选 + 5 名词解释 + 4 简答题 + 1 病例分析<br>限时 90 分钟 · 支持断点续做 · 客观题自动批改" },
+    tcm: { title: "中医基础理论考试模拟", desc: "三套完整试卷 · 每套含 20 单选 + 10 多选 + 10 判断 + 3 简答题 + 2 论述题<br>限时 120 分钟 · 支持断点续做 · 客观题自动批改" }
+  };
+  document.getElementById("heroTitle").textContent = heroData[subj].title;
+  document.getElementById("heroDesc").innerHTML = heroData[subj].desc;
+  // Update paper cards
+  const cardData = {
+    pathology: { title: "综合模拟卷", info: '<span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span>', random: '<span>50 单选</span><span>10 多选</span><span>5 名解</span><span>4 简答</span><span>1 病例</span>' },
+    tcm: { title: "中医模拟卷", info: '<span>20 单选</span><span>10 多选</span><span>10 判断</span><span>3 简答</span><span>2 论述</span>', random: '<span>20 单选</span><span>10 多选</span><span>10 判断</span><span>3 简答</span><span>2 论述</span>' }
+  };
+  const cd = cardData[subj];
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById("cardTitle" + i).textContent = cd.title + ({1:"一",2:"二",3:"三"})[i];
+    document.getElementById("cardInfo" + i).innerHTML = cd.info;
+  }
+  document.getElementById("cardTitle4").textContent = "随机模拟卷";
+  document.getElementById("cardInfo4").innerHTML = cd.random;
+  // Update footer
+  document.getElementById("pageFooter").textContent = cfg.name + " · 平板友好 · 可部署到 GitHub Pages";
+  // Dismiss resume if visible (resume is subject-specific)
+  document.getElementById("resumeBox").style.display = "none";
+  // Re-check resume for new subject
+  checkResume();
+}
+</script>
 </body>
 </html>
+
